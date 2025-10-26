@@ -21,6 +21,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         applyFiltersAndSort();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tests, filters, sortConfig]);
 
     const fetchTests = async () => {
