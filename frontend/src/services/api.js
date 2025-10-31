@@ -9,6 +9,61 @@ const api = axios.create({
     },
 });
 
+// Add request interceptor to include JWT token
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Add response interceptor to handle authentication errors
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Token is invalid or expired
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Optionally redirect to login
+            // window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
+// Authentication API endpoints
+export const authAPI = {
+    // Register new user
+    register: (userData) => api.post('/auth/register', userData),
+    
+    // Login user
+    login: (credentials) => api.post('/auth/login', credentials),
+    
+    // Logout (client-side only)
+    logout: () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+    },
+    
+    // Check if user is authenticated
+    isAuthenticated: () => {
+        return !!localStorage.getItem('token');
+    },
+    
+    // Get current user
+    getCurrentUser: () => {
+        const userStr = localStorage.getItem('user');
+        return userStr ? JSON.parse(userStr) : null;
+    }
+};
+
 // Test API endpoints
 export const testAPI = {
     // Get all tests
@@ -25,6 +80,18 @@ export const testAPI = {
     
     // Get statistics
     getStatistics: () => api.get('/tests/statistics'),
+};
+
+// System metrics API endpoint
+export const metricsAPI = {
+    // Get real-time system metrics
+    getMetrics: () => api.get('/metrics')
+};
+
+// Reports API endpoint
+export const reportsAPI = {
+    // Generate PDF report
+    getPDFReport: () => api.get('/reports/pdf', { responseType: 'blob' })
 };
 
 export default api;

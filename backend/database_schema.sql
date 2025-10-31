@@ -4,9 +4,19 @@
 CREATE DATABASE IF NOT EXISTS performance_observer;
 USE performance_observer;
 
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Create performance_tests table
 CREATE TABLE IF NOT EXISTS performance_tests (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
     test_name VARCHAR(255) NOT NULL,
     device_used VARCHAR(255) NOT NULL,
     browser_os VARCHAR(255) NOT NULL,
@@ -18,6 +28,8 @@ CREATE TABLE IF NOT EXISTS performance_tests (
     test_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
     INDEX idx_test_date (test_date),
     INDEX idx_status (status),
     INDEX idx_device (device_used)
