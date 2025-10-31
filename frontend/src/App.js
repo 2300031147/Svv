@@ -4,6 +4,8 @@ import Navigation from './components/Navigation';
 import Dashboard from './pages/Dashboard';
 import NewTest from './pages/NewTest';
 import Analytics from './pages/Analytics';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import './App.css';
 
 function App() {
@@ -15,6 +17,8 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/new-test" element={<NewTest />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
         </Routes>
       </div>
     </Router>

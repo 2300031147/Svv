@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { testAPI } from '../services/api';
 import { formatDate, getStatusColor, exportToCSV } from '../utils/helpers';
+import ReportButton from '../components/ReportButton';
 
 const Dashboard = () => {
     const [tests, setTests] = useState([]);
@@ -137,12 +138,15 @@ const Dashboard = () => {
                         {filteredTests.length} test{filteredTests.length !== 1 ? 's' : ''} recorded
                     </p>
                 </div>
-                <Link
-                    to="/new-test"
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                    + New Test
-                </Link>
+                <div className="flex items-center space-x-4">
+                    <ReportButton />
+                    <Link
+                        to="/new-test"
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                        + New Test
+                    </Link>
+                </div>
             </div>
 
             {error && (

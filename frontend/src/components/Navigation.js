@@ -1,13 +1,27 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import DarkModeToggle from './DarkModeToggle';
+import { authAPI } from '../services/api';
 
 const Navigation = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const isAuthenticated = authAPI.isAuthenticated();
+    const currentUser = authAPI.getCurrentUser();
 
     const isActive = (path) => {
         return location.pathname === path;
     };
+
+    const handleLogout = () => {
+        authAPI.logout();
+        navigate('/login');
+    };
+
+    // Don't show navigation on login/register pages
+    if (location.pathname === '/login' || location.pathname === '/register') {
+        return null;
+    }
 
     return (
         <nav className="bg-white dark:bg-gray-800 shadow-lg">
@@ -55,6 +69,32 @@ const Navigation = () => {
                         >
                             Analytics
                         </Link>
+                        
+                        {isAuthenticated ? (
+                            <>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    {currentUser?.email}
+                                </span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                    Logout
+                                </button>
+                            </>
+                        ) : (
+                            <Link
+                                to="/login"
+                                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                    isActive('/login') 
+                                        ? 'bg-blue-600 text-white' 
+                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                }`}
+                            >
+                                Login
+                            </Link>
+                        )}
+                        
                         <DarkModeToggle />
                     </div>
                 </div>

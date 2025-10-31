@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { testAPI } from '../services/api';
+import { testAPI, metricsAPI } from '../services/api';
 
 const NewTest = () => {
     const navigate = useNavigate();
@@ -16,6 +16,7 @@ const NewTest = () => {
     });
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
+    const [fetchingMetrics, setFetchingMetrics] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -29,6 +30,32 @@ const NewTest = () => {
                 ...prev,
                 [name]: ''
             }));
+        }
+    };
+
+    const handleFetchMetrics = async () => {
+        setFetchingMetrics(true);
+        try {
+            const response = await metricsAPI.getMetrics();
+            const metrics = response.data.data;
+            
+            setFormData(prev => ({
+                ...prev,
+                cpu_usage: metrics.cpu_usage.toString(),
+                memory_usage: metrics.memory_usage.toString()
+            }));
+            
+            // Clear any existing errors for these fields
+            setErrors(prev => ({
+                ...prev,
+                cpu_usage: '',
+                memory_usage: ''
+            }));
+        } catch (err) {
+            alert('Failed to fetch system metrics. Please try again.');
+            console.error('Error fetching metrics:', err);
+        } finally {
+            setFetchingMetrics(false);
         }
     };
 
@@ -174,49 +201,69 @@ const NewTest = () => {
                         )}
                     </div>
 
-                    {/* CPU Usage */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            CPU Usage (%) *
-                        </label>
-                        <input
-                            type="number"
-                            name="cpu_usage"
-                            value={formData.cpu_usage}
-                            onChange={handleChange}
-                            placeholder="e.g., 45.5"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
-                                errors.cpu_usage ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                            }`}
-                        />
-                        {errors.cpu_usage && (
-                            <p className="text-red-500 text-sm mt-1">{errors.cpu_usage}</p>
-                        )}
-                    </div>
+                    {/* System Metrics Section */}
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                                System Metrics
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={handleFetchMetrics}
+                                disabled={fetchingMetrics}
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                            >
+                                {fetchingMetrics ? 'Fetching...' : '🔄 Fetch Metrics'}
+                            </button>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Click "Fetch Metrics" to automatically capture your device's current CPU and memory usage.
+                        </p>
 
-                    {/* Memory Usage */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Memory Usage (MB) *
-                        </label>
-                        <input
-                            type="number"
-                            name="memory_usage"
-                            value={formData.memory_usage}
-                            onChange={handleChange}
-                            placeholder="e.g., 512.3"
-                            min="0"
-                            step="0.1"
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
-                                errors.memory_usage ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                            }`}
-                        />
-                        {errors.memory_usage && (
-                            <p className="text-red-500 text-sm mt-1">{errors.memory_usage}</p>
-                        )}
+                        {/* CPU Usage */}
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                CPU Usage (%) *
+                            </label>
+                            <input
+                                type="number"
+                                name="cpu_usage"
+                                value={formData.cpu_usage}
+                                onChange={handleChange}
+                                placeholder="e.g., 45.5"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                                    errors.cpu_usage ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                                }`}
+                            />
+                            {errors.cpu_usage && (
+                                <p className="text-red-500 text-sm mt-1">{errors.cpu_usage}</p>
+                            )}
+                        </div>
+
+                        {/* Memory Usage */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Memory Usage (MB) *
+                            </label>
+                            <input
+                                type="number"
+                                name="memory_usage"
+                                value={formData.memory_usage}
+                                onChange={handleChange}
+                                placeholder="e.g., 512.3"
+                                min="0"
+                                step="0.1"
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                                    errors.memory_usage ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                                }`}
+                            />
+                            {errors.memory_usage && (
+                                <p className="text-red-500 text-sm mt-1">{errors.memory_usage}</p>
+                            )}
+                        </div>
                     </div>
 
                     {/* Status */}
