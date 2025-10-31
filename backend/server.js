@@ -24,9 +24,27 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Apply rate limiting to API routes
 app.use('/api', limiter);
 
+// Import authentication middleware
+const authMiddleware = require('./auth/authMiddleware');
+
 // Routes
+const authRoutes = require('./auth/authRoutes');
 const testRoutes = require('./routes/testRoutes');
+const metricsRoutes = require('./routes/metricsRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+
+// Public routes (no authentication required)
+app.use('/api/auth', authRoutes);
+
+// Protected routes (authentication optional for backward compatibility)
+// Tests can be accessed without auth but will save user_id if authenticated
 app.use('/api', testRoutes);
+
+// System metrics route
+app.use('/api', metricsRoutes);
+
+// Reports route (can be protected with authMiddleware if needed)
+app.use('/api/reports', reportRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -39,10 +57,18 @@ app.get('/', (req, res) => {
         message: 'System Performance Observer API',
         version: '1.0.0',
         endpoints: {
-            tests: '/api/tests',
-            statistics: '/api/tests/statistics',
-            singleTest: '/api/tests/:id',
-            health: '/health'
+            auth: {
+                register: 'POST /api/auth/register',
+                login: 'POST /api/auth/login'
+            },
+            tests: 'GET /api/tests',
+            statistics: 'GET /api/tests/statistics',
+            singleTest: 'GET /api/tests/:id',
+            createTest: 'POST /api/tests',
+            deleteTest: 'DELETE /api/tests/:id',
+            metrics: 'GET /api/metrics',
+            reports: 'GET /api/reports/pdf',
+            health: 'GET /health'
         }
     });
 });

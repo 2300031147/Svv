@@ -75,11 +75,14 @@ const createTest = async (req, res) => {
             });
         }
 
+        // Get user_id from authenticated user (if available)
+        const user_id = req.user ? req.user.id : null;
+
         const [result] = await db.query(
             `INSERT INTO performance_tests 
-            (test_name, device_used, browser_os, response_time, cpu_usage, memory_usage, notes, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [test_name, device_used, browser_os, response_time, cpu_usage, memory_usage, notes || '', status]
+            (user_id, test_name, device_used, browser_os, response_time, cpu_usage, memory_usage, notes, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [user_id, test_name, device_used, browser_os, response_time, cpu_usage, memory_usage, notes || '', status]
         );
 
         res.status(201).json({
@@ -87,6 +90,7 @@ const createTest = async (req, res) => {
             message: 'Test created successfully',
             data: {
                 id: result.insertId,
+                user_id,
                 test_name,
                 device_used,
                 browser_os,
