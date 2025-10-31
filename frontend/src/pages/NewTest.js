@@ -17,6 +17,8 @@ const NewTest = () => {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [fetchingMetrics, setFetchingMetrics] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -35,6 +37,7 @@ const NewTest = () => {
 
     const handleFetchMetrics = async () => {
         setFetchingMetrics(true);
+        setErrorMessage('');
         try {
             const response = await metricsAPI.getMetrics();
             const metrics = response.data.data;
@@ -51,8 +54,11 @@ const NewTest = () => {
                 cpu_usage: '',
                 memory_usage: ''
             }));
+            
+            setSuccessMessage('System metrics fetched successfully!');
+            setTimeout(() => setSuccessMessage(''), 3000);
         } catch (err) {
-            alert('Failed to fetch system metrics. Please try again.');
+            setErrorMessage('Failed to fetch system metrics. Please try again.');
             console.error('Error fetching metrics:', err);
         } finally {
             setFetchingMetrics(false);
@@ -93,6 +99,7 @@ const NewTest = () => {
         }
 
         setLoading(true);
+        setErrorMessage('');
 
         try {
             await testAPI.createTest({
@@ -102,10 +109,10 @@ const NewTest = () => {
                 memory_usage: parseFloat(formData.memory_usage)
             });
 
-            alert('Test saved successfully!');
-            navigate('/');
+            setSuccessMessage('Test saved successfully!');
+            setTimeout(() => navigate('/'), 1500);
         } catch (err) {
-            alert('Failed to save test. Please try again.');
+            setErrorMessage('Failed to save test. Please try again.');
             console.error('Error saving test:', err);
         } finally {
             setLoading(false);
@@ -117,6 +124,19 @@ const NewTest = () => {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
                     New Performance Test
+                </h1>
+
+                {successMessage && (
+                    <div className="bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-200 px-4 py-3 rounded mb-6">
+                        {successMessage}
+                    </div>
+                )}
+
+                {errorMessage && (
+                    <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-6">
+                        {errorMessage}
+                    </div>
+                )}
                 </h1>
 
                 <form onSubmit={handleSubmit} className="space-y-6">

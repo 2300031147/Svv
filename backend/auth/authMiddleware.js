@@ -12,8 +12,17 @@ const authMiddleware = (req, res, next) => {
             });
         }
 
+        // Check if JWT_SECRET is configured
+        if (!process.env.JWT_SECRET) {
+            console.error('JWT_SECRET is not configured in environment variables');
+            return res.status(500).json({
+                success: false,
+                message: 'Server configuration error'
+            });
+        }
+
         // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
         next();
     } catch (error) {

@@ -40,10 +40,18 @@ router.post('/register', async (req, res) => {
             [email, password_hash]
         );
 
+        // Check if JWT_SECRET is configured
+        if (!process.env.JWT_SECRET) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server configuration error: JWT_SECRET not set'
+            });
+        }
+
         // Generate JWT token
         const token = jwt.sign(
             { id: result.insertId, email },
-            process.env.JWT_SECRET || 'your_secret_key',
+            process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
@@ -104,10 +112,18 @@ router.post('/login', async (req, res) => {
             });
         }
 
+        // Check if JWT_SECRET is configured
+        if (!process.env.JWT_SECRET) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server configuration error: JWT_SECRET not set'
+            });
+        }
+
         // Generate JWT token
         const token = jwt.sign(
             { id: user.id, email: user.email },
-            process.env.JWT_SECRET || 'your_secret_key',
+            process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 

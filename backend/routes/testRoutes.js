@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../auth/authMiddleware');
+const jwt = require('jsonwebtoken');
 const {
     getAllTests,
     getTestById,
@@ -14,8 +14,10 @@ const optionalAuth = (req, res, next) => {
     try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
         if (token) {
-            const jwt = require('jsonwebtoken');
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
+            if (!process.env.JWT_SECRET) {
+                throw new Error('JWT_SECRET is not configured');
+            }
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.user = decoded;
         }
     } catch (error) {

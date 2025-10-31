@@ -91,15 +91,7 @@ export const metricsAPI = {
 // Reports API endpoint
 export const reportsAPI = {
     // Generate PDF report
-    getPDFReport: () => {
-        const token = localStorage.getItem('token');
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        
-        return axios.get(`${API_BASE_URL}/reports/pdf`, {
-            responseType: 'blob',
-            headers
-        });
-    }
+    getPDFReport: () => api.get('/reports/pdf', { responseType: 'blob' })
 };
 
 export default api;

@@ -2,8 +2,26 @@ const express = require('express');
 const router = express.Router();
 const { generatePDFReport } = require('../reportGenerator');
 
+// Optional auth middleware
+const optionalAuth = (req, res, next) => {
+    try {
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+        if (token) {
+            const jwt = require('jsonwebtoken');
+            if (!process.env.JWT_SECRET) {
+                throw new Error('JWT_SECRET is not configured');
+            }
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = decoded;
+        }
+    } catch (error) {
+        // If token is invalid, just continue without user info
+    }
+    next();
+};
+
 // Generate PDF report
-router.get('/pdf', async (req, res) => {
+router.get('/pdf', optionalAuth, async (req, res) => {
     try {
         const userId = req.user ? req.user.id : null;
         const doc = await generatePDFReport(userId);
