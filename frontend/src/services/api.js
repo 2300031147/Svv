@@ -80,6 +80,49 @@ export const testAPI = {
     
     // Get statistics
     getStatistics: () => api.get('/tests/statistics'),
+    
+    // Compare multiple tests
+    compareTests: (ids) => api.get(`/tests/compare?ids=${ids.join(',')}`),
+    
+    // Get historical trends
+    getHistoricalTrends: (days = 30, metric = 'response_time') => 
+        api.get(`/tests/trends?days=${days}&metric=${metric}`)
+};
+
+// Checklist API endpoints
+export const checklistAPI = {
+    // Get all checklists
+    getAllChecklists: () => api.get('/checklists'),
+    
+    // Get single checklist by ID
+    getChecklistById: (id) => api.get(`/checklists/${id}`),
+    
+    // Create new checklist
+    createChecklist: (checklistData) => api.post('/checklists', checklistData),
+    
+    // Update checklist item
+    updateChecklistItem: (itemId, data) => api.put(`/checklists/items/${itemId}`, data),
+    
+    // Delete checklist
+    deleteChecklist: (id) => api.delete(`/checklists/${id}`)
+};
+
+// Scheduled tests API endpoints
+export const scheduledTestAPI = {
+    // Get all scheduled tests
+    getAllScheduledTests: () => api.get('/scheduled-tests'),
+    
+    // Get single scheduled test by ID
+    getScheduledTestById: (id) => api.get(`/scheduled-tests/${id}`),
+    
+    // Create new scheduled test
+    createScheduledTest: (data) => api.post('/scheduled-tests', data),
+    
+    // Update scheduled test
+    updateScheduledTest: (id, data) => api.put(`/scheduled-tests/${id}`, data),
+    
+    // Delete scheduled test
+    deleteScheduledTest: (id) => api.delete(`/scheduled-tests/${id}`)
 };
 
 // System metrics API endpoint
@@ -91,7 +134,10 @@ export const metricsAPI = {
 // Reports API endpoint
 export const reportsAPI = {
     // Generate PDF report
-    getPDFReport: () => api.get('/reports/pdf', { responseType: 'blob' })
+    getPDFReport: () => api.get('/reports/pdf', { responseType: 'blob' }),
+    
+    // Generate Excel report
+    getExcelReport: () => api.get('/reports/excel', { responseType: 'blob' })
 };
 
 export default api;

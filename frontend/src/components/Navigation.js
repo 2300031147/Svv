@@ -69,6 +69,36 @@ const Navigation = () => {
                         >
                             Analytics
                         </Link>
+                        <Link
+                            to="/checklists"
+                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                isActive('/checklists') || location.pathname.startsWith('/checklists/')
+                                    ? 'bg-blue-600 text-white' 
+                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            Checklists
+                        </Link>
+                        <Link
+                            to="/comparison"
+                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                isActive('/comparison') 
+                                    ? 'bg-blue-600 text-white' 
+                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            Compare
+                        </Link>
+                        <Link
+                            to="/trends"
+                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                isActive('/trends') 
+                                    ? 'bg-blue-600 text-white' 
+                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            Trends
+                        </Link>
                         
                         {isAuthenticated ? (
                             <>

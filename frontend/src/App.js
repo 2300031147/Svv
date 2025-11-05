@@ -6,6 +6,10 @@ import NewTest from './pages/NewTest';
 import Analytics from './pages/Analytics';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Checklists from './pages/Checklists';
+import ChecklistDetail from './pages/ChecklistDetail';
+import TestComparison from './pages/TestComparison';
+import HistoricalTrends from './pages/HistoricalTrends';
 import './App.css';
 
 function App() {
@@ -19,6 +23,10 @@ function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/checklists" element={<Checklists />} />
+          <Route path="/checklists/:id" element={<ChecklistDetail />} />
+          <Route path="/comparison" element={<TestComparison />} />
+          <Route path="/trends" element={<HistoricalTrends />} />
         </Routes>
       </div>
     </Router>
