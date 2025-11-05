@@ -7,7 +7,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Rate limiting middleware
+// Rate limiting middleware (IP-based for unauthenticated users)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per windowMs
@@ -16,16 +16,72 @@ const limiter = rateLimit({
     legacyHeaders: false,
 });
 
+// Per-user rate limiting middleware (for authenticated users)
+const userRateLimitStore = new Map();
+
+const perUserLimiter = (req, res, next) => {
+    // If user is authenticated, use per-user rate limiting
+    if (req.user && req.user.id) {
+        const userId = req.user.id;
+        const now = Date.now();
+        const windowMs = 15 * 60 * 1000; // 15 minutes
+        const maxRequests = 200; // Higher limit for authenticated users
+        
+        if (!userRateLimitStore.has(userId)) {
+            userRateLimitStore.set(userId, { count: 1, resetTime: now + windowMs });
+            return next();
+        }
+        
+        const userLimit = userRateLimitStore.get(userId);
+        
+        // Reset if window has expired
+        if (now > userLimit.resetTime) {
+            userRateLimitStore.set(userId, { count: 1, resetTime: now + windowMs });
+            return next();
+        }
+        
+        // Increment count
+        if (userLimit.count < maxRequests) {
+            userLimit.count++;
+            return next();
+        }
+        
+        // Rate limit exceeded
+        return res.status(429).json({
+            success: false,
+            message: 'Too many requests, please try again later.',
+            retryAfter: Math.ceil((userLimit.resetTime - now) / 1000)
+        });
+    }
+    
+    // If not authenticated, continue to IP-based rate limiting
+    next();
+};
+
+// Clean up expired entries every hour
+setInterval(() => {
+    const now = Date.now();
+    for (const [userId, data] of userRateLimitStore.entries()) {
+        if (now > data.resetTime) {
+            userRateLimitStore.delete(userId);
+        }
+    }
+}, 60 * 60 * 1000);
+
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Apply rate limiting to API routes
+// Apply IP-based rate limiting to all API routes
 app.use('/api', limiter);
 
 // Import authentication middleware
 const authMiddleware = require('./auth/authMiddleware');
+
+// Apply per-user rate limiting after auth check
+app.use('/api', authMiddleware.optionalAuth);
+app.use('/api', perUserLimiter);
 
 // Routes
 const authRoutes = require('./auth/authRoutes');

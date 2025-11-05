@@ -9,12 +9,14 @@ A full-stack web application for manually recording and analyzing system perform
 - **Password Hashing** - bcrypt encryption for user passwords
 - **Protected Routes** - Optional authentication for test management
 - **Token Management** - Automatic token storage and refresh
+- **User Roles** - Admin and user roles with different permissions
+- **Per-User Rate Limiting** - 200 requests per 15 minutes for authenticated users
 
 ### Home Dashboard
 - Overview of all recorded tests with key metrics
 - Filter and sort tests by date, device, or status
 - Export test data to CSV
-- **Download PDF Reports** - Generate comprehensive PDF reports of test results
+- **Download PDF/Excel Reports** - Generate comprehensive reports of test results
 - Delete unwanted test records
 
 ### Test Recording Page
@@ -28,7 +30,32 @@ A full-stack web application for manually recording and analyzing system perform
   - Notes / Observations
   - Status (Stable / Lag / Crash)
 - **Auto-Capture System Metrics** - Fetch real-time CPU and memory usage with one click
+- **Browser Performance Metrics** - Capture web vitals using Performance API
 - Form validation with error messages
+
+### Manual Test Checklists
+- Create custom test checklists
+- Add/remove checklist items
+- Track completion progress
+- Visual progress indicators
+
+### Test Comparison
+- Select and compare multiple tests
+- Side-by-side metric comparison
+- Compare browser performance metrics
+- Identify performance differences
+
+### Historical Trends
+- View performance trends over time (7-90 days)
+- Analyze different metrics (Response Time, CPU, Memory)
+- Interactive line charts with min/max/average
+- Statistical summary cards
+
+### Test Scheduling
+- Schedule tests with cron expressions
+- Configure test parameters
+- Enable/disable scheduled tests
+- Track last and next run times
 
 ### Performance Analytics
 - Interactive charts using Chart.js:
@@ -173,6 +200,31 @@ The frontend will run on `http://localhost:3000` and automatically open in your 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/reports/pdf` | Generate and download PDF report |
+| GET | `/api/reports/excel` | Generate and download Excel report |
+
+### Test Checklists
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/checklists` | Get all checklists |
+| GET | `/api/checklists/:id` | Get a specific checklist with items |
+| POST | `/api/checklists` | Create a new checklist |
+| PUT | `/api/checklists/items/:id` | Update checklist item status |
+| DELETE | `/api/checklists/:id` | Delete a checklist |
+
+### Scheduled Tests (Requires Authentication)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/scheduled-tests` | Get all scheduled tests |
+| GET | `/api/scheduled-tests/:id` | Get a specific scheduled test |
+| POST | `/api/scheduled-tests` | Create a new scheduled test |
+| PUT | `/api/scheduled-tests/:id` | Update a scheduled test |
+| DELETE | `/api/scheduled-tests/:id` | Delete a scheduled test |
+
+### Test Comparison & Trends
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/tests/compare?ids=1,2,3` | Compare multiple tests |
+| GET | `/api/tests/trends?days=30&metric=response_time` | Get historical trends |
 
 ### Health Check
 | Method | Endpoint | Description |
@@ -345,15 +397,74 @@ Svv/
 - [x] JWT-based authentication and user management
 - [x] PDF report generation
 - [x] Real-time system metrics capture
-- [ ] Manual test checklist feature
-- [ ] Real-time monitoring using browser Performance API
-- [ ] Excel export functionality
-- [ ] Test comparison feature
-- [ ] Historical data trends
+- [x] Manual test checklist feature
+- [x] Real-time monitoring using browser Performance API
+- [x] Excel export functionality
+- [x] Test comparison feature
+- [x] Historical data trends
+- [x] Multi-user support with roles and permissions
+- [x] API rate limiting per user
+- [x] Test scheduling and automation
 - [ ] Email notifications for test failures
-- [ ] Multi-user support with roles and permissions
-- [ ] API rate limiting per user
-- [ ] Test scheduling and automation
+- [ ] Scheduled test execution (currently scheduling only)
+
+## 📱 New Features (v2.0)
+
+### Manual Test Checklists
+Create and manage manual testing checklists to track test progress:
+- Create checklists with custom items
+- Track completion status
+- Visual progress indicators
+- Mark items as complete/incomplete
+
+### Browser Performance Monitoring
+Capture real-time browser performance metrics using the Performance API:
+- Page Load Time
+- DOM Content Loaded
+- Time to First Byte (TTFB)
+- First Contentful Paint (FCP)
+- Largest Contentful Paint (LCP)
+- Cumulative Layout Shift (CLS)
+- First Input Delay (FID)
+
+### Test Comparison
+Compare multiple test results side-by-side:
+- Select multiple tests to compare
+- View metrics in table format
+- Compare system and browser metrics
+- Identify performance differences
+
+### Historical Trends
+Analyze performance trends over time:
+- View trends for last 7-90 days
+- Select different metrics (Response Time, CPU, Memory)
+- Interactive charts with min/max/average values
+- Statistical summary cards
+
+### Excel Export
+Export test data to Excel format:
+- Comprehensive Excel reports with multiple sheets
+- Summary statistics sheet
+- Detailed test results sheet
+- Formatted and styled output
+
+### User Roles & Permissions
+Support for different user roles:
+- Admin role for full access
+- User role for standard access
+- Role-based authentication
+
+### Per-User Rate Limiting
+Enhanced rate limiting:
+- IP-based limits for unauthenticated users (100 req/15min)
+- Per-user limits for authenticated users (200 req/15min)
+- Automatic cleanup of expired limits
+
+### Test Scheduling
+Schedule tests to run automatically:
+- Cron-based scheduling
+- Configurable test parameters
+- Active/inactive status
 
 ## 🐛 Troubleshooting
 
