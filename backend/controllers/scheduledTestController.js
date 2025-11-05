@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const cron = require('node-cron');
+const cronParser = require('cron-parser');
 
 // Store active cron jobs
 const activeCronJobs = new Map();
@@ -7,12 +8,11 @@ const activeCronJobs = new Map();
 // Parse cron expression to get next run time
 const getNextRunTime = (cronExpression) => {
     try {
-        // This is a simplified calculation - in production, use a proper library
-        const now = new Date();
-        // Default to 1 hour from now if parsing fails
-        const nextRun = new Date(now.getTime() + 60 * 60 * 1000);
-        return nextRun;
+        const interval = cronParser.parseExpression(cronExpression);
+        return interval.next().toDate();
     } catch (error) {
+        console.error('Error parsing cron expression:', error);
+        // Default to 1 hour from now if parsing fails
         const now = new Date();
         return new Date(now.getTime() + 60 * 60 * 1000);
     }
