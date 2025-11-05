@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { testAPI, metricsAPI } from '../services/api';
+import { capturePerformanceMetrics } from '../utils/performanceMonitor';
 
 const NewTest = () => {
     const navigate = useNavigate();
@@ -14,6 +15,7 @@ const NewTest = () => {
         notes: '',
         status: 'Stable'
     });
+    const [browserMetrics, setBrowserMetrics] = useState(null);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [fetchingMetrics, setFetchingMetrics] = useState(false);
@@ -65,6 +67,22 @@ const NewTest = () => {
         }
     };
 
+    const handleCaptureBrowserMetrics = () => {
+        try {
+            const metrics = capturePerformanceMetrics();
+            if (metrics) {
+                setBrowserMetrics(metrics);
+                setSuccessMessage('Browser performance metrics captured!');
+                setTimeout(() => setSuccessMessage(''), 3000);
+            } else {
+                setErrorMessage('Performance API not available in this browser');
+            }
+        } catch (err) {
+            setErrorMessage('Failed to capture browser metrics');
+            console.error('Error capturing browser metrics:', err);
+        }
+    };
+
     const validateForm = () => {
         const newErrors = {};
 
@@ -102,12 +120,19 @@ const NewTest = () => {
         setErrorMessage('');
 
         try {
-            await testAPI.createTest({
+            const testData = {
                 ...formData,
                 response_time: parseInt(formData.response_time),
                 cpu_usage: parseFloat(formData.cpu_usage),
                 memory_usage: parseFloat(formData.memory_usage)
-            });
+            };
+
+            // Add browser metrics if captured
+            if (browserMetrics) {
+                testData.browser_metrics = browserMetrics;
+            }
+
+            await testAPI.createTest(testData);
 
             setSuccessMessage('Test saved successfully!');
             setTimeout(() => navigate('/'), 1500);
@@ -137,7 +162,6 @@ const NewTest = () => {
                         {errorMessage}
                     </div>
                 )}
-                </h1>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Test Name */}
@@ -227,18 +251,49 @@ const NewTest = () => {
                             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                                 System Metrics
                             </h3>
-                            <button
-                                type="button"
-                                onClick={handleFetchMetrics}
-                                disabled={fetchingMetrics}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-                            >
-                                {fetchingMetrics ? 'Fetching...' : '🔄 Fetch Metrics'}
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleFetchMetrics}
+                                    disabled={fetchingMetrics}
+                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                                >
+                                    {fetchingMetrics ? 'Fetching...' : '🔄 Fetch Metrics'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleCaptureBrowserMetrics}
+                                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                                >
+                                    📊 Capture Browser Metrics
+                                </button>
+                            </div>
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                            Click "Fetch Metrics" to automatically capture your device's current CPU and memory usage.
+                            Click "Fetch Metrics" to capture CPU/memory or "Capture Browser Metrics" for web performance data.
                         </p>
+
+                        {browserMetrics && (
+                            <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900 rounded-lg">
+                                <div className="text-sm font-medium text-purple-800 dark:text-purple-200 mb-2">
+                                    Browser Performance Metrics Captured:
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs text-purple-700 dark:text-purple-300">
+                                    {browserMetrics.page_load_time && (
+                                        <div>Page Load: {browserMetrics.page_load_time.toFixed(2)}ms</div>
+                                    )}
+                                    {browserMetrics.dom_content_loaded && (
+                                        <div>DOM Loaded: {browserMetrics.dom_content_loaded.toFixed(2)}ms</div>
+                                    )}
+                                    {browserMetrics.first_contentful_paint && (
+                                        <div>FCP: {browserMetrics.first_contentful_paint.toFixed(2)}ms</div>
+                                    )}
+                                    {browserMetrics.cumulative_layout_shift && (
+                                        <div>CLS: {browserMetrics.cumulative_layout_shift.toFixed(4)}</div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {/* CPU Usage */}
                         <div className="mb-6">

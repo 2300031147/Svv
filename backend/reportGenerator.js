@@ -1,4 +1,5 @@
 const PDFDocument = require('pdfkit');
+const ExcelJS = require('exceljs');
 const db = require('./config/database');
 
 async function generatePDFReport(userId = null) {
@@ -159,4 +160,117 @@ async function generatePDFReport(userId = null) {
     return doc;
 }
 
-module.exports = { generatePDFReport };
+async function generateExcelReport(userId = null) {
+    // Create a new workbook
+    const workbook = new ExcelJS.Workbook();
+    
+    // Fetch test data
+    let query = 'SELECT * FROM performance_tests';
+    let params = [];
+    
+    if (userId) {
+        query += ' WHERE user_id = ?';
+        params.push(userId);
+    }
+    
+    query += ' ORDER BY test_date DESC';
+    
+    const [tests] = await db.query(query, params);
+
+    // Fetch statistics
+    let statsQuery = `
+        SELECT 
+            COUNT(*) as total_tests,
+            AVG(response_time) as avg_response_time,
+            AVG(cpu_usage) as avg_cpu_usage,
+            AVG(memory_usage) as avg_memory_usage,
+            SUM(CASE WHEN status = 'Stable' THEN 1 ELSE 0 END) as stable_count,
+            SUM(CASE WHEN status = 'Lag' THEN 1 ELSE 0 END) as lag_count,
+            SUM(CASE WHEN status = 'Crash' THEN 1 ELSE 0 END) as crash_count
+        FROM performance_tests
+    `;
+    
+    if (userId) {
+        statsQuery += ' WHERE user_id = ?';
+    }
+    
+    const [stats] = await db.query(statsQuery, userId ? [userId] : []);
+    const statistics = stats[0];
+
+    // Create Summary worksheet
+    const summarySheet = workbook.addWorksheet('Summary');
+    summarySheet.columns = [
+        { header: 'Metric', key: 'metric', width: 30 },
+        { header: 'Value', key: 'value', width: 20 }
+    ];
+
+    summarySheet.addRows([
+        { metric: 'Report Generated', value: new Date().toLocaleString() },
+        { metric: '', value: '' },
+        { metric: 'Total Tests', value: statistics.total_tests || 0 },
+        { metric: 'Average Response Time (ms)', value: parseFloat(statistics.avg_response_time || 0).toFixed(2) },
+        { metric: 'Average CPU Usage (%)', value: parseFloat(statistics.avg_cpu_usage || 0).toFixed(2) },
+        { metric: 'Average Memory Usage (MB)', value: parseFloat(statistics.avg_memory_usage || 0).toFixed(2) },
+        { metric: '', value: '' },
+        { metric: 'Stable Tests', value: statistics.stable_count || 0 },
+        { metric: 'Lag Tests', value: statistics.lag_count || 0 },
+        { metric: 'Crash Tests', value: statistics.crash_count || 0 }
+    ]);
+
+    // Style the summary sheet
+    summarySheet.getRow(1).font = { bold: true };
+    summarySheet.getCell('A1').fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' }
+    };
+    summarySheet.getCell('B1').fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' }
+    };
+
+    // Create Tests worksheet
+    const testsSheet = workbook.addWorksheet('Test Results');
+    testsSheet.columns = [
+        { header: 'ID', key: 'id', width: 10 },
+        { header: 'Test Name', key: 'test_name', width: 30 },
+        { header: 'Device', key: 'device_used', width: 15 },
+        { header: 'Browser/OS', key: 'browser_os', width: 25 },
+        { header: 'Response Time (ms)', key: 'response_time', width: 20 },
+        { header: 'CPU Usage (%)', key: 'cpu_usage', width: 15 },
+        { header: 'Memory Usage (MB)', key: 'memory_usage', width: 20 },
+        { header: 'Status', key: 'status', width: 12 },
+        { header: 'Notes', key: 'notes', width: 40 },
+        { header: 'Test Date', key: 'test_date', width: 20 }
+    ];
+
+    // Add test data
+    tests.forEach(test => {
+        testsSheet.addRow({
+            id: test.id,
+            test_name: test.test_name,
+            device_used: test.device_used,
+            browser_os: test.browser_os,
+            response_time: test.response_time,
+            cpu_usage: parseFloat(test.cpu_usage).toFixed(2),
+            memory_usage: parseFloat(test.memory_usage).toFixed(2),
+            status: test.status,
+            notes: test.notes,
+            test_date: test.test_date
+        });
+    });
+
+    // Style the tests sheet header
+    testsSheet.getRow(1).font = { bold: true };
+    testsSheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' }
+    };
+
+    // Return the workbook
+    return workbook;
+}
+
+module.exports = { generatePDFReport, generateExcelReport };
