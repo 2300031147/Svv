@@ -7,7 +7,7 @@ const db = require('../config/database');
 // Register new user
 router.post('/register', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, role } = req.body;
 
         // Validation
         if (!email || !password) {
@@ -34,10 +34,13 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(password, salt);
 
+        // Set default role to 'user' if not provided
+        const userRole = role || 'user';
+
         // Create user
         const [result] = await db.query(
-            'INSERT INTO users (email, password_hash) VALUES (?, ?)',
-            [email, password_hash]
+            'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)',
+            [email, password_hash, userRole]
         );
 
         // Check if JWT_SECRET is configured
@@ -50,7 +53,7 @@ router.post('/register', async (req, res) => {
 
         // Generate JWT token
         const token = jwt.sign(
-            { id: result.insertId, email },
+            { id: result.insertId, email, role: userRole },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
@@ -61,7 +64,8 @@ router.post('/register', async (req, res) => {
             token,
             user: {
                 id: result.insertId,
-                email
+                email,
+                role: userRole
             }
         });
     } catch (error) {
@@ -89,7 +93,7 @@ router.post('/login', async (req, res) => {
 
         // Find user
         const [users] = await db.query(
-            'SELECT id, email, password_hash FROM users WHERE email = ?',
+            'SELECT id, email, password_hash, role FROM users WHERE email = ?',
             [email]
         );
 
@@ -122,7 +126,7 @@ router.post('/login', async (req, res) => {
 
         // Generate JWT token
         const token = jwt.sign(
-            { id: user.id, email: user.email },
+            { id: user.id, email: user.email, role: user.role || 'user' },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
@@ -133,7 +137,8 @@ router.post('/login', async (req, res) => {
             token,
             user: {
                 id: user.id,
-                email: user.email
+                email: user.email,
+                role: user.role || 'user'
             }
         });
     } catch (error) {

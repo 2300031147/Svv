@@ -32,6 +32,8 @@ const authRoutes = require('./auth/authRoutes');
 const testRoutes = require('./routes/testRoutes');
 const metricsRoutes = require('./routes/metricsRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const checklistRoutes = require('./routes/checklistRoutes');
+const scheduledTestRoutes = require('./routes/scheduledTestRoutes');
 
 // Public routes (no authentication required)
 app.use('/api/auth', authRoutes);
@@ -39,6 +41,12 @@ app.use('/api/auth', authRoutes);
 // Protected routes (authentication optional for backward compatibility)
 // Tests can be accessed without auth but will save user_id if authenticated
 app.use('/api', testRoutes);
+
+// Checklist routes (optional authentication)
+app.use('/api', checklistRoutes);
+
+// Scheduled test routes (requires authentication)
+app.use('/api', scheduledTestRoutes);
 
 // System metrics route
 app.use('/api', metricsRoutes);
@@ -55,7 +63,7 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
     res.json({ 
         message: 'System Performance Observer API',
-        version: '1.0.0',
+        version: '2.0.0',
         endpoints: {
             auth: {
                 register: 'POST /api/auth/register',
@@ -63,11 +71,30 @@ app.get('/', (req, res) => {
             },
             tests: 'GET /api/tests',
             statistics: 'GET /api/tests/statistics',
+            compare: 'GET /api/tests/compare?ids=1,2,3',
+            trends: 'GET /api/tests/trends?days=30&metric=response_time',
             singleTest: 'GET /api/tests/:id',
             createTest: 'POST /api/tests',
             deleteTest: 'DELETE /api/tests/:id',
+            checklists: {
+                getAll: 'GET /api/checklists',
+                getOne: 'GET /api/checklists/:id',
+                create: 'POST /api/checklists',
+                updateItem: 'PUT /api/checklists/items/:id',
+                delete: 'DELETE /api/checklists/:id'
+            },
+            scheduledTests: {
+                getAll: 'GET /api/scheduled-tests',
+                getOne: 'GET /api/scheduled-tests/:id',
+                create: 'POST /api/scheduled-tests',
+                update: 'PUT /api/scheduled-tests/:id',
+                delete: 'DELETE /api/scheduled-tests/:id'
+            },
             metrics: 'GET /api/metrics',
-            reports: 'GET /api/reports/pdf',
+            reports: {
+                pdf: 'GET /api/reports/pdf',
+                excel: 'GET /api/reports/excel'
+            },
             health: 'GET /health'
         }
     });

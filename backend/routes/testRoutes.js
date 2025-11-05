@@ -6,7 +6,9 @@ const {
     getTestById,
     createTest,
     deleteTest,
-    getStatistics
+    getStatistics,
+    compareTests,
+    getHistoricalTrends
 } = require('../controllers/testController');
 
 // Optional authentication middleware - adds user info if token is present but doesn't block
@@ -29,6 +31,8 @@ const optionalAuth = (req, res, next) => {
 // Routes with optional authentication
 router.get('/tests', optionalAuth, getAllTests);
 router.get('/tests/statistics', optionalAuth, getStatistics);
+router.get('/tests/compare', optionalAuth, compareTests);
+router.get('/tests/trends', optionalAuth, getHistoricalTrends);
 router.get('/tests/:id', optionalAuth, getTestById);
 router.post('/tests', optionalAuth, createTest);
 router.delete('/tests/:id', optionalAuth, deleteTest);

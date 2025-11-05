@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { generatePDFReport } = require('../reportGenerator');
+const { generatePDFReport, generateExcelReport } = require('../reportGenerator');
 
 // Optional auth middleware
 const optionalAuth = (req, res, next) => {
@@ -37,6 +37,29 @@ router.get('/pdf', optionalAuth, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error generating PDF report',
+            error: error.message
+        });
+    }
+});
+
+// Generate Excel report
+router.get('/excel', optionalAuth, async (req, res) => {
+    try {
+        const userId = req.user ? req.user.id : null;
+        const workbook = await generateExcelReport(userId);
+
+        // Set response headers
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=performance-report.xlsx');
+
+        // Write the workbook to the response
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (error) {
+        console.error('Error generating Excel report:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error generating Excel report',
             error: error.message
         });
     }

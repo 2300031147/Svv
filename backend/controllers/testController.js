@@ -37,9 +37,20 @@ const getTestById = async (req, res) => {
             });
         }
         
+        // Fetch browser metrics if available
+        const [metricsRows] = await db.query(
+            'SELECT * FROM browser_performance_metrics WHERE test_id = ?',
+            [id]
+        );
+        
+        const testData = rows[0];
+        if (metricsRows.length > 0) {
+            testData.browser_metrics = metricsRows[0];
+        }
+        
         res.json({
             success: true,
-            data: rows[0]
+            data: testData
         });
     } catch (error) {
         console.error('Error fetching test:', error);
@@ -62,7 +73,8 @@ const createTest = async (req, res) => {
             cpu_usage,
             memory_usage,
             notes,
-            status
+            status,
+            browser_metrics
         } = req.body;
 
         // Validation
@@ -85,11 +97,33 @@ const createTest = async (req, res) => {
             [user_id, test_name, device_used, browser_os, response_time, cpu_usage, memory_usage, notes || '', status]
         );
 
+        const testId = result.insertId;
+
+        // Insert browser performance metrics if provided
+        if (browser_metrics) {
+            await db.query(
+                `INSERT INTO browser_performance_metrics 
+                (test_id, page_load_time, dom_content_loaded, time_to_first_byte, 
+                 first_contentful_paint, largest_contentful_paint, cumulative_layout_shift, first_input_delay) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    testId,
+                    browser_metrics.page_load_time || null,
+                    browser_metrics.dom_content_loaded || null,
+                    browser_metrics.time_to_first_byte || null,
+                    browser_metrics.first_contentful_paint || null,
+                    browser_metrics.largest_contentful_paint || null,
+                    browser_metrics.cumulative_layout_shift || null,
+                    browser_metrics.first_input_delay || null
+                ]
+            );
+        }
+
         res.status(201).json({
             success: true,
             message: 'Test created successfully',
             data: {
-                id: result.insertId,
+                id: testId,
                 user_id,
                 test_name,
                 device_used,
@@ -171,10 +205,108 @@ const getStatistics = async (req, res) => {
     }
 };
 
+// Compare multiple tests
+const compareTests = async (req, res) => {
+    try {
+        const { ids } = req.query;
+        
+        if (!ids) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide test IDs to compare'
+            });
+        }
+        
+        const testIds = ids.split(',').map(id => parseInt(id.trim()));
+        
+        if (testIds.length < 2) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide at least 2 test IDs to compare'
+            });
+        }
+        
+        const placeholders = testIds.map(() => '?').join(',');
+        const [tests] = await db.query(
+            `SELECT pt.*, bpm.* 
+             FROM performance_tests pt 
+             LEFT JOIN browser_performance_metrics bpm ON pt.id = bpm.test_id 
+             WHERE pt.id IN (${placeholders})`,
+            testIds
+        );
+        
+        if (tests.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No tests found with provided IDs'
+            });
+        }
+        
+        res.json({
+            success: true,
+            data: tests
+        });
+    } catch (error) {
+        console.error('Error comparing tests:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error comparing tests',
+            error: error.message
+        });
+    }
+};
+
+// Get historical trends
+const getHistoricalTrends = async (req, res) => {
+    try {
+        const { days = 30, metric = 'response_time' } = req.query;
+        
+        const validMetrics = ['response_time', 'cpu_usage', 'memory_usage'];
+        if (!validMetrics.includes(metric)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid metric. Use: response_time, cpu_usage, or memory_usage'
+            });
+        }
+        
+        const [trends] = await db.query(
+            `SELECT 
+                DATE(test_date) as date,
+                AVG(${metric}) as avg_value,
+                MIN(${metric}) as min_value,
+                MAX(${metric}) as max_value,
+                COUNT(*) as test_count
+             FROM performance_tests
+             WHERE test_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+             GROUP BY DATE(test_date)
+             ORDER BY date ASC`,
+            [parseInt(days)]
+        );
+        
+        res.json({
+            success: true,
+            data: {
+                metric,
+                days: parseInt(days),
+                trends
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching historical trends:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching historical trends',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getAllTests,
     getTestById,
     createTest,
     deleteTest,
-    getStatistics
+    getStatistics,
+    compareTests,
+    getHistoricalTrends
 };
